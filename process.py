@@ -16,6 +16,8 @@ from collections import Counter
 import random
 import json
 from python_speech_features import logfbank, fbank, sigproc
+from transformers import Wav2Vec2Processor, Wav2Vec2Model
+import torch
 
 from path import datasets_path
 
@@ -23,12 +25,21 @@ class FeatureExtractor(object):
     def __init__(self, sample_rate, nmfcc = 26):
         self.sample_rate = sample_rate
         self.nmfcc = nmfcc
+        # Load Wav2Vec 2.0 model and processor once for efficiency
+        self.processor = Wav2Vec2Processor.from_pretrained("facebook/wav2vec2-large-960h")
+        self.model = Wav2Vec2Model.from_pretrained("facebook/wav2vec2-large-960h")
 
     def get_features(self, features_to_use, X):
         X_features = None
-        accepted_features_to_use = ("logfbank", 'mfcc', 'fbank', 'melspectrogram', 'spectrogram', 'interspeech2018')
+        accepted_features_to_use = ("logfbank", 'mfcc', 'fbank', 'melspectrogram', 'spectrogram', 'interspeech2018', 'wav2vec')
         if features_to_use not in accepted_features_to_use:
             raise NotImplementedError("{} not in {}!".format(features_to_use, accepted_features_to_use))
+        if features_to_use == "wav2vec":
+            X_features = self.get_wav2vec(X)
+        elif features_to_use == "logfbank":
+            X_features = self.get_logfbank(X)
+        elif features_to_use == "mfcc":
+            X_features = self.get_mfcc(X, self.nmfcc)
         if features_to_use in ('logfbank'):
             X_features = self.get_logfbank(X)
         if features_to_use in ('mfcc'):
@@ -41,6 +52,17 @@ class FeatureExtractor(object):
             X_features = self.get_spectrogram(X)
         if features_to_use in ('interspeech2018'):
             X_features = self.get_spectrogram_interspeech2018(X)
+        return X_features
+
+    def get_wav2vec(self, X):
+        def _get_wav2vec(x):
+            inputs = self.processor(x, sampling_rate=self.sample_rate, return_tensors="pt", padding=True)
+            with torch.no_grad():
+                features = self.model(inputs.input_values).last_hidden_state
+            return features.mean(dim=1).numpy()  # Average embedding
+
+        # Apply Wav2Vec extraction to each segment
+        X_features = np.apply_along_axis(_get_wav2vec, 1, X)
         return X_features
 
     def get_logfbank(self, X):
@@ -104,6 +126,7 @@ class FeatureExtractor(object):
 
         X_features = np.apply_along_axis(_get_spectrogram, 1, X)
         return X_features
+        
 
 def segment(wavfile, 
             sample_rate = 16000,
