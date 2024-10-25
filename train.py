@@ -35,7 +35,8 @@ import argparse
 def parse_args():
     parser = argparse.ArgumentParser(description='...')
     # features
-    parser.add_argument('-f', '--features_to_use',default='mfcc',type=str,help='{"mfcc" , "logfbank","fbank","spectrogram","melspectrogram"}')
+    #parser.add_argument('-f', '--features_to_use',default='mfcc',type=str,help='{"mfcc" , "logfbank","fbank","spectrogram","melspectrogram"}')
+    parser.add_argument('-f', '--features_to_use', default='wav2vec', type=str, help='{"mfcc" , "logfbank","fbank","spectrogram","melspectrogram", "wav2vec"}')
     parser.add_argument('-i', '--impro_or_script',default='impro',type=str,help='select features')
     parser.add_argument('-s', '--sample_rate',default=16000,type=int,help='sample rate, default is 16000')
     parser.add_argument('-n', '--nmfcc',default=26,type=int,help='MFCC coefficients')
