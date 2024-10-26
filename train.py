@@ -35,7 +35,7 @@ import argparse
 def parse_args():
     parser = argparse.ArgumentParser(description='...')
     # features
-    parser.add_argument('-f', '--features_to_use',default='mfcc',type=str,help='{"mfcc" , "logfbank","fbank","spectrogram","melspectrogram"}')
+    parser.add_argument('-f', '--features_to_use',default='melspectrogram',type=str,help='{"mfcc" , "logfbank","fbank","spectrogram"}')
     parser.add_argument('-i', '--impro_or_script',default='impro',type=str,help='select features')
     parser.add_argument('-s', '--sample_rate',default=16000,type=int,help='sample rate, default is 16000')
     parser.add_argument('-n', '--nmfcc',default=26,type=int,help='MFCC coefficients')
@@ -93,6 +93,8 @@ def config(args):
                 if v: kws[k] = v
             # kws.update(config_kws)
     return kws
+
+
 
 # Initial setting
 def setup_seed(seed):
@@ -330,6 +332,14 @@ if __name__ == '__main__':
 
     args = parse_args()
     kws = config(args)
+
+    filename = f'{kws["features_to_use"]}_{kws["impro_or_script"]}'
+    if kws['featuresFileName'] is None:
+        kws['featuresFileName'] = f'{kws["datadir"]}/features_{filename}.pkl'
+
+    if not os.path.exists(kws["datadir"]): 
+        os.makedirs(kws["datadir"], exist_ok=True)
+
 
     setup_seed(kws['seed'])
 
